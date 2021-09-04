@@ -21,7 +21,7 @@
     <param name="initial_pose_a" value="-1.5707"/> 		<!-- //adjusted -->
     <param name="min_particles" value="1000"/>			<!-- //adjusted -->
     <param name="max_particles" value="7000"/>			<!-- //adjusted -->
-    <!-- Odometry noise in translation and rotation -->
+    <!-- etry noise in translation and rotation -->
     <param name="odom_model_type" value="diff-corrected"/>	<!-- //adjusted -->
     <param name="odom_alpha1" value="0.0015"/>			<!-- //adjusted -->
     <param name="odom_alpha2" value="0.0015"/> 			<!-- //adjusted -->
