@@ -39,7 +39,7 @@ int main(int argc, char** argv){
   goal.target_pose.pose.orientation.x = 0.0;
   goal.target_pose.pose.orientation.y = 0.0;
   goal.target_pose.pose.orientation.z = -0.5930581109560585;
-  goal.target_pose.pose.orientation.w = 0.8051596593404511  ;
+  goal.target_pose.pose.orientation.w = 0.8051596593404511;
   
 
    // Send the goal position and orientation for the robot to reach
