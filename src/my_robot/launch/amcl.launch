@@ -46,6 +46,6 @@
   </node>
   
   <!--launch rviz-->
-  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find my_robot)/rviz/robot_model_costmap.rviz" respawn="false"/> -->
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find my_robot)/rviz/robot_model.rviz" respawn="false"/> -->
   
 </launch>

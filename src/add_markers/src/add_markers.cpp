@@ -1,12 +1,36 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
+#include <nav_msgs/Odometry.h>
+
+
+class OdomListener
+{
+  public:
+    bool getFlg() { return bDestReached; }
+
+    void readOdomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
+      ROS_INFO("Robot is travelling... %d", bDestReached);
+      // ROS_INFO("Seq: [%d]", msg->header.seq);
+      // ROS_INFO("Position-> x: [%f], y: [%f], z: [%f]", msg->pose.pose.position.x,msg->pose.pose.position.y, msg->pose.pose.position.z);
+      // ROS_INFO("Orientation-> x: [%f], y: [%f], z: [%f], w: [%f]", msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+      // ROS_INFO("Vel-> Linear: [%f], Angular: [%f]", msg->twist.twist.linear.x,msg->twist.twist.angular.z);
+      bDestReached = true;
+    }
+
+  private:
+    bool bDestReached = false;
+};
+
 
 int main( int argc, char** argv )
 {
+  OdomListener odomListener;
+
   ros::init(argc, argv, "add_markers");
   ros::NodeHandle n;
-  ros::Rate r(1);
+  ros::Rate r(1); // 1 Hz
   ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+  ros::Subscriber sub = n.subscribe("odom", 1000, &OdomListener::readOdomCallback, &odomListener);
 
   // Set our initial shape type to be a cube
   uint32_t shape = visualization_msgs::Marker::CUBE;
@@ -59,6 +83,8 @@ int main( int argc, char** argv )
       ROS_WARN_ONCE("Please create a subscriber to the marker");
       sleep(1);
     }
+
+    std::cout << odomListener.getFlg() << std::endl;
     
     marker_pub.publish(marker); // Sets the marker
 
@@ -82,8 +108,11 @@ int main( int argc, char** argv )
 
     marker_pub.publish(marker); // Sets the marker
 
-    r.sleep();
+    std::cout << "In loop!!!" << std::endl;
 
-    break;
+    ros::spinOnce();
+    r.sleep();
   }
+
+  getchar();
 }
