@@ -1,24 +1,60 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <nav_msgs/Odometry.h>
-
+#include <std_msgs/Float64.h>
+#include <typeinfo>
 
 class OdomListener
 {
   public:
     bool getFlg() { return bDestReached; }
 
+    std::vector<double> getPosition() const { 
+      if(position.size() != 0)
+        return position;
+      else { return std::vector<double> {0}; } // IMPORTANT: This is necessary because in first iteration the values are undefined 
+    }
+    std::vector<double> getOrientation() const { 
+      if(orientation.size() != 0)
+        return orientation;
+      else { return std::vector<double> {0}; } // IMPORTANT: This is necessary because in first iteration the values are undefined 
+    }
+    std::vector<double> getAngularLinear() const {
+      if(angular_linear.size() != 0)
+        return angular_linear;
+      else { return std::vector<double> {0}; } // IMPORTANT: This is necessary because in first iteration the values are undefined
+    }
+
     void readOdomCallback(const nav_msgs::Odometry::ConstPtr& msg) {
-      ROS_INFO("Robot is travelling... %d", bDestReached);
       // ROS_INFO("Seq: [%d]", msg->header.seq);
       // ROS_INFO("Position-> x: [%f], y: [%f], z: [%f]", msg->pose.pose.position.x,msg->pose.pose.position.y, msg->pose.pose.position.z);
       // ROS_INFO("Orientation-> x: [%f], y: [%f], z: [%f], w: [%f]", msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
       // ROS_INFO("Vel-> Linear: [%f], Angular: [%f]", msg->twist.twist.linear.x,msg->twist.twist.angular.z);
       bDestReached = true;
+
+      position = { 
+        msg->pose.pose.position.x, 
+        msg->pose.pose.position.y, 
+        msg->pose.pose.position.z 
+      };
+      orientation = { 
+        msg->pose.pose.orientation.x, 
+        msg->pose.pose.orientation.y, 
+        msg->pose.pose.orientation.z,
+        msg->pose.pose.orientation.w  
+      };
+      angular_linear = { 
+        msg->twist.twist.linear.x, 
+        msg->twist.twist.linear.y, 
+        msg->twist.twist.linear.z 
+       };
     }
 
   private:
     bool bDestReached = false;
+    std::vector<double> position;
+    std::vector<double> orientation;
+    std::vector<double> angular_linear;
 };
 
 
@@ -84,17 +120,16 @@ int main( int argc, char** argv )
       sleep(1);
     }
 
-    std::cout << odomListener.getFlg() << std::endl;
-    
+    ROS_INFO("Robot Pos: [%f, %f, %f] ", odomListener.getPosition()[0], odomListener.getPosition()[1], odomListener.getPosition()[2]);
+
     marker_pub.publish(marker); // Sets the marker
 
     // Wait 5 seconds and publish a DELETE message to remove the marker
-    ros::Duration(5).sleep();
-    marker.action = visualization_msgs::Marker::DELETE;
-    marker_pub.publish(marker);
+    // ros::Duration(5).sleep();
+    // marker.action = visualization_msgs::Marker::DELETE;
+    // marker_pub.publish(marker);
 
-    // Wait 5 seconds and publish a ADD message to the marker at the drop off zone
-    ros::Duration(5).sleep();
+    // Publish a ADD message to the marker at the drop off zone
     marker.action = visualization_msgs::Marker::ADD;
     
     // Set the position and orientation of the marker (6 DOF)
@@ -107,8 +142,6 @@ int main( int argc, char** argv )
     marker.pose.orientation.w = 0.3922564860454202;
 
     marker_pub.publish(marker); // Sets the marker
-
-    std::cout << "In loop!!!" << std::endl;
 
     ros::spinOnce();
     r.sleep();
