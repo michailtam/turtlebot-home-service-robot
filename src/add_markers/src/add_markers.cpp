@@ -7,7 +7,7 @@
 
 enum class TargetPos { PICKUP_ZONE, DROP_OFF_ZONE };
 
-const std::vector<double> marker_prop { 0.1f, 0.1f, 0.1f, 0.0f, 1.0f, 0.0f, 1.0f }; // Index 0-2 = pos, 3-6 = orientation
+const std::vector<double> marker_prop { 0.1f, 0.1f, 0.2f, 0.0f, 1.0f, 1.0f, 1.0f }; // Size: 0-2, Color: 3-6
 
 // The map contains the navigation data of each target point
 const std::map<int, std::vector<double> > navData {
@@ -122,20 +122,17 @@ int main( int argc, char** argv )
       sleep(1);
     }
 
-    marker_pub.publish(marker);
-
     if(calcManhattanDist(navData.at(targetID), amclPoseListener.getPosition()) < 0.45f) {
       // Execute operation based on the target ID
       switch(targetID) {
         case static_cast<int>(TargetPos::PICKUP_ZONE):
-          ros::Duration(2).sleep();
-          ROS_INFO("PICK");
+          ros::Duration(1).sleep();
           manageMarker(marker, 0, "DELETE", shape); // Remove the marker to the pick up zone
           targetID = static_cast<int>(TargetPos::DROP_OFF_ZONE);
           break;
         case static_cast<int>(TargetPos::DROP_OFF_ZONE):
-          // ros::Duration(2).sleep();
-          // marker.action = visualization_msgs::Marker::ADD;
+          ros::Duration(2).sleep();
+          manageMarker(marker, 1, "ADD", shape); // Add the marker to the drop off zone
           break;
         default:
           ROS_INFO("[WARNING] No target position defined!!!");
@@ -145,6 +142,8 @@ int main( int argc, char** argv )
       ROS_INFO("\n[MOVING] Distance to target %s is %f", strMarker.c_str(), 
         calcManhattanDist(amclPoseListener.getPosition(), navData.at(targetID)));
     }
+
+    marker_pub.publish(marker);
 
     ros::spinOnce();
     r.sleep();
