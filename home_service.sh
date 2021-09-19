@@ -9,4 +9,4 @@ sleep 5
 # sleep 5
 xterm  -e  " rosrun pick_objects pick_objects" &
 sleep 5
-xterm -e   " rosrun add_markers add_markers" 
+xterm -e   " rosrun add_markers add_markers _operation:=autonomous_nav" 

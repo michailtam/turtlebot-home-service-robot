@@ -5,25 +5,25 @@
 #include <map>
 #include <sstream>
 
-enum class TargetPos { PICKUP_ZONE, DROP_OFF_ZONE };
+enum class TargetZone { PICKUP_ZONE, DROP_OFF_ZONE };
 
 const std::vector<double> marker_prop { 0.1f, 0.1f, 0.2f, 0.0f, 1.0f, 1.0f, 1.0f }; // Size: 0-2, Color: 3-6
 
 // The map contains the navigation data of each target point
 const std::map<int, std::vector<double> > navData {
-  { static_cast<int>(TargetPos::PICKUP_ZONE), std::vector<double> { 2.48f, -6.96f, 0.0f, 0.0f, 0.0f, -0.59f, 0.80f } }, // Position & orientation
-  { static_cast<int>(TargetPos::DROP_OFF_ZONE), std::vector<double> { -2.14f, -2.96f, 0.0f, 0.0f, 0.0f, -0.92f, 0.39f } }
+  { static_cast<int>(TargetZone::PICKUP_ZONE), std::vector<double> { 2.48f, -6.96f, 0.0f, 0.0f, 0.0f, -0.59f, 0.80f } }, // Position & orientation
+  { static_cast<int>(TargetZone::DROP_OFF_ZONE), std::vector<double> { -2.14f, -2.96f, 0.0f, 0.0f, 0.0f, -0.92f, 0.39f } }
 };
 
 inline double calcManhattanDist(const std::vector<double>& robo_pose, const std::vector<double>& marker_pose) {
   return std::abs(marker_pose[0] - robo_pose[0]) + std::abs(marker_pose[1] - robo_pose[1]) + std::abs(marker_pose[2] - robo_pose[2]);
 }
 
-std::string enumtoString(const TargetPos& tarPos) {
+std::string enumtoString(const TargetZone& tarPos) {
     std::stringstream ss;
     switch(tarPos) {
-    case TargetPos::PICKUP_ZONE: ss << "Pickup Zone"; break;
-    case TargetPos::DROP_OFF_ZONE: ss << "Drop Off Zone"; break;
+    case TargetZone::PICKUP_ZONE: ss << "Pickup Zone"; break;
+    case TargetZone::DROP_OFF_ZONE: ss << "Drop Off Zone"; break;
     default: ss << "Invalid target position!!!";
     }
     return ss.str();
@@ -96,20 +96,36 @@ void manageMarker(visualization_msgs::Marker& marker, int navDataID, const std::
 int main( int argc, char** argv )
 {
   AmclPoseListener amclPoseListener;
-  
+  ros::Subscriber sub;
+
   ros::init(argc, argv, "add_markers");
-  ros::NodeHandle n;
+  ros::NodeHandle n_pub_mark;  // Node handle for the marker publisher
+  ros::NodeHandle n_sub_cmd("~"); // Node handle for the amcl_pose subscriber NOTE: ~ is necessary
+  ros::NodeHandle n_sub_amcl;
   ros::Rate r(1); // 1 Hz
-  ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
-  ros::Subscriber sub = n.subscribe("amcl_pose", 1000, &AmclPoseListener::readPoseCallback, &amclPoseListener);
+  
+  // Read the parameters given by the command line
+  std::string strParam;
+  n_sub_cmd.getParam("operation", strParam);
+  ROS_INFO("The parameter given is %s", strParam.c_str());
 
-  // Set our initial shape type to be a cube
+  ros::Publisher marker_pub = n_pub_mark.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+
+  // Checks which operation to execute
+  if(strParam.compare("add_marker") == 0) {
+    ROS_INFO("[ADD_MARKER OPERATION]");
+  } 
+  else if(strParam.compare("autonomous_nav") == 0) {
+    ROS_INFO("[AUTONOMOUS NAVIGATION OPERATION]");
+    sub = n_sub_amcl.subscribe("amcl_pose", 1000, &AmclPoseListener::readPoseCallback, &amclPoseListener); 
+  }
+  
+  // Set the initial shape type to be a cube and the pose to be the pickup zone
   uint32_t shape = visualization_msgs::Marker::CUBE;
-  int targetID = static_cast<int>(TargetPos::PICKUP_ZONE);
+  int targetID = static_cast<int>(TargetZone::PICKUP_ZONE);
   visualization_msgs::Marker marker;
-
-  manageMarker(marker, 0, "ADD", shape);  // Add the marker to the pick up zone
-  std::string strMarker { enumtoString(TargetPos::PICKUP_ZONE) };
+  TargetZone enumTargetZone = TargetZone::PICKUP_ZONE; // Saves the current target zone
+  std::string strOperation { "ADD" }; //  Saves the current operation as string
 
   while (ros::ok())
   {
@@ -121,29 +137,73 @@ int main( int argc, char** argv )
       ROS_WARN_ONCE("Please create a subscriber to the marker");
       sleep(1);
     }
-
-    if(calcManhattanDist(navData.at(targetID), amclPoseListener.getPosition()) < 0.45f) {
-      // Execute operation based on the target ID
+    
+    // Executes the autonomous navigation task
+    if (strParam.compare("autonomous_nav") == 0) 
+    {
+      if(calcManhattanDist(navData.at(targetID), amclPoseListener.getPosition()) < 0.45f) 
+      {
+        // Execute operation based on the target ID
+        switch(targetID) {
+          case static_cast<int>(TargetZone::PICKUP_ZONE):
+            ros::Duration(0.5).sleep();
+            manageMarker(marker, static_cast<int>(TargetZone::PICKUP_ZONE), "DELETE", shape); // Remove the marker to the pick up zone
+            targetID = static_cast<int>(TargetZone::DROP_OFF_ZONE);
+            break;
+          case static_cast<int>(TargetZone::DROP_OFF_ZONE):
+            ros::Duration(2).sleep();
+            manageMarker(marker, static_cast<int>(TargetZone::DROP_OFF_ZONE), "ADD", shape); // Add the marker to the drop off zone
+            break;
+          default:
+            ROS_INFO("[WARNING] No target position defined!!!");
+        }
+      } 
+      else  {
+        // ROS_INFO("\n[ROBOT IS MOVING] Distance to target %s is %f", enumtoString().c_str(), 
+        //   calcManhattanDist(amclPoseListener.getPosition(), navData.at(targetID)));
+      }
+      marker_pub.publish(marker); // Publish the marker to the desired position (or hide it)
+    }
+    // Executes the add marker task
+    else if (strParam.compare("add_marker") == 0) 
+    {
       switch(targetID) {
-        case static_cast<int>(TargetPos::PICKUP_ZONE):
-          ros::Duration(0.5).sleep();
-          manageMarker(marker, 0, "DELETE", shape); // Remove the marker to the pick up zone
-          targetID = static_cast<int>(TargetPos::DROP_OFF_ZONE);
+        case static_cast<int>(TargetZone::PICKUP_ZONE):
+          // Show the marker to the pickup zone
+          if (strOperation.compare("ADD") == 0) {
+            ROS_INFO("[SHOW] Marker at %s shown", enumtoString(enumTargetZone).c_str());
+            manageMarker(marker, static_cast<int>(TargetZone::PICKUP_ZONE), strOperation, shape);
+            strOperation = "DELETE";
+          }
+          // Hide the marker at the pickup zone
+          else if(strOperation.compare("DELETE") == 0) {
+            ros::Duration(5).sleep();
+            ROS_INFO("[HIDE] Marker at %s hidden", enumtoString(enumTargetZone).c_str());
+            manageMarker(marker, static_cast<int>(TargetZone::PICKUP_ZONE), strOperation, shape);
+            targetID = static_cast<int>(TargetZone::DROP_OFF_ZONE);
+            enumTargetZone = TargetZone::DROP_OFF_ZONE;
+            strOperation = "ADD";
+          }
           break;
-        case static_cast<int>(TargetPos::DROP_OFF_ZONE):
-          ros::Duration(2).sleep();
-          manageMarker(marker, 1, "ADD", shape); // Add the marker to the drop off zone
+        case static_cast<int>(TargetZone::DROP_OFF_ZONE):
+          // Show the marker to the drop off zone
+          ros::Duration(5).sleep();
+          ROS_INFO("[SHOW] Marker at %s shown", enumtoString(enumTargetZone).c_str());
+          manageMarker(marker, static_cast<int>(TargetZone::DROP_OFF_ZONE), strOperation, shape);
+          strOperation = "TASK_ENDED";
           break;
         default:
-          ROS_INFO("[WARNING] No target position defined!!!");
+          ROS_INFO("[WARNING] No target position defined!!!"); 
       }
-    } 
-    else  {
-      ROS_INFO("\n[MOVING] Distance to target %s is %f", strMarker.c_str(), 
-        calcManhattanDist(amclPoseListener.getPosition(), navData.at(targetID)));
+      marker_pub.publish(marker); // Publish the marker to the desired position (or hide it)
+      
+      // Checks if the marker is at the drop off zone to end the task
+      if(strOperation.compare("TASK_ENDED") == 0 && enumTargetZone == TargetZone::DROP_OFF_ZONE) {
+        ROS_INFO("[TASK COMPLETED] add_markers node shuts down now!!!");
+        ros::Duration(5).sleep();
+        ros::shutdown();
+      }
     }
-
-    marker_pub.publish(marker);
 
     ros::spinOnce();
     r.sleep();
