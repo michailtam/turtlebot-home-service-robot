@@ -126,7 +126,7 @@ int main( int argc, char** argv )
       // Execute operation based on the target ID
       switch(targetID) {
         case static_cast<int>(TargetPos::PICKUP_ZONE):
-          ros::Duration(1).sleep();
+          ros::Duration(0.5).sleep();
           manageMarker(marker, 0, "DELETE", shape); // Remove the marker to the pick up zone
           targetID = static_cast<int>(TargetPos::DROP_OFF_ZONE);
           break;
