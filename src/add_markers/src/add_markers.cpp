@@ -16,6 +16,8 @@ const std::map<int, std::vector<double> > navData {
   { static_cast<int>(TargetZone::DROP_OFF_ZONE), std::vector<double> { -2.14f, -2.96f, 0.0f, 0.0f, 0.0f, -0.92f, 0.39f } }
 };
 
+static int zoneIdx = 0;
+
 // Constains all the necessary task data
 struct TaskData {
   TargetZone targetZone;
@@ -143,6 +145,61 @@ void add_markers_op(TaskData& tskData)
 }
 // END ADD_MARKERS_OP
 
+// AUTONOMOUS_NAVIGATION_OP
+void autonomous_nav(TaskData& tskData, const AmclPoseListener* pAmclListener)
+{
+  double distance = calcManhattanDist(pAmclListener->getPosition(), navData.at(static_cast<int>(tskData.targetZone)));
+
+  // Check if the robot is moving towards the target zone
+  if(tskData.operation == Operation::MOVING) {
+    // Checks if the robot has reached the target zone
+    if(distance < 0.45f && tskData.operation == Operation::MOVING) {
+      switch(static_cast<int>(tskData.targetZone)) {
+        case static_cast<int>(TargetZone::PICKUP_ZONE):
+          ROS_INFO("[OBJECT PICKED UP]");
+          tskData.operation = Operation::DELETE_MARKER;
+          break;
+        case static_cast<int>(TargetZone::DROP_OFF_ZONE):
+          ROS_INFO("[OBJECT DELIVERED]");
+          tskData.operation = Operation::ADD_MARKER;
+          break;
+      }
+    }
+    else
+      ROS_INFO("\n[ROBOT IS MOVING] Distance to target %s is %f", enumtoString(tskData.targetZone).c_str(), distance);  
+  }
+  else 
+  {
+    switch(static_cast<int>(tskData.targetZone)) 
+    {
+      case static_cast<int>(TargetZone::PICKUP_ZONE):
+        // Show the marker at the pickup zone
+        if (tskData.operation == Operation::ADD_MARKER) {
+          ROS_INFO("[SHOW MARKER] at %s", enumtoString(tskData.targetZone).c_str());
+          manageMarker(tskData.marker, tskData.targetZone, tskData.operation, tskData.shape);
+          tskData.operation = Operation::MOVING;
+        }
+        // Hide the marker at the pickup zone
+        else if(tskData.operation == Operation::DELETE_MARKER) {
+          ROS_INFO("[HIDE MARKER] at %s", enumtoString(tskData.targetZone).c_str());
+          manageMarker(tskData.marker, tskData.targetZone, tskData.operation, tskData.shape);
+          tskData.targetZone = TargetZone::DROP_OFF_ZONE;
+          tskData.operation = Operation::MOVING;
+        }
+        break;
+      case static_cast<int>(TargetZone::DROP_OFF_ZONE):
+        // Show the marker to the drop off zone
+        ROS_INFO("[SHOW MARKER] at %s", enumtoString(tskData.targetZone).c_str());
+        manageMarker(tskData.marker, tskData.targetZone, tskData.operation, tskData.shape);
+        tskData.operation = Operation::TASK_COMPLETED;
+        break;
+      default:
+        ROS_INFO("[WARNING] No target position defined!!!"); 
+    }
+  }
+}
+// END AUTONOMOUS_NAVIGATION_OP
+
 
 int main( int argc, char** argv )
 {
@@ -162,7 +219,6 @@ int main( int argc, char** argv )
 
   ros::Publisher marker_pub = n_pub_mark.advertise<visualization_msgs::Marker>("visualization_marker", 1);
   visualization_msgs::Marker marker { };
-  double distance { };
 
   // Contains all the data of the current task
   TaskData tskData { 
@@ -185,9 +241,8 @@ int main( int argc, char** argv )
   {
     // Publish the marker
     while (marker_pub.getNumSubscribers() < 1) {
-      if (!ros::ok()) {
+      if (!ros::ok())
         return 0;
-      }
       ROS_WARN_ONCE("Please create a subscriber to the marker");
       sleep(1);
     }
@@ -208,51 +263,10 @@ int main( int argc, char** argv )
     if (strParam.compare("add_marker") == 0) {
       add_markers_op(tskData);
     }
-    
-    // // Executes the autonomous navigation task
-    // if (strParam.compare("autonomous_nav") == 0) 
-    // {
-    //   // Check if the robot is moving towards the target zone
-    //   if(operation == Operation::MOVING) {
-    //     distance = calcManhattanDist(amclPoseListener.getPosition(), navData.at(targetID));
-    //     ROS_INFO("\n[ROBOT IS MOVING] Distance to target %s is %f", enumtoString(targetZone).c_str(), distance);  
-    //   } 
-    //   // Add the marker to the pickup zone
-    //   else if (operation == Operation::START) {
-    //     ROS_INFO("\n[SHOW MARKER] at %s", enumtoString(targetZone).c_str());
-    //     manageMarker(marker, static_cast<int>(targetZone), operation, shape);
-    //     operation = Operation::MOVING;
-    //   }
-    //   // Check if the robot has reached the target zone
-    //   else if(calcManhattanDist(navData.at(targetID), amclPoseListener.getPosition()) < 0.45f) 
-    //   {
-    //     // Determines which operation to execute based on the target zone
-    //     switch(targetID)
-    //     {
-    //       case static_cast<int>(TargetZone::PICKUP_ZONE):
-    //         // Show the marker to the pickup zone
-    //         if(operation == Operation::ADD_MARKER) {
-    //           ROS_INFO("[SHOW MARKER] at %s", enumtoString(targetZone).c_str());
-    //           manageMarker(marker, static_cast<int>(targetZone), operation, shape);
-    //           operation = Operation::DELETE_MARKER;  // (1) Next, hide the marker
-    //         }
-    //         // Hide the marker at the pickup zone
-    //         else if(operation == Operation::DELETE_MARKER) {
-    //           ROS_INFO("[HIDE MARKER] at %s", enumtoString(targetZone).c_str());
-    //           operation = Operation::DELETE_MARKER;
-    //           manageMarker(marker, static_cast<int>(targetZone), operation, shape);
-    //           targetZone = TargetZone::DROP_OFF_ZONE;
-    //           operation = Operation::MOVING;  // (2) Next, move the robot
-    //         }
-    //         break;
-    //       case static_cast<int>(TargetZone::DROP_OFF_ZONE):
-    //         if(operation == Operation::DELETE_MARKER) {
-    //           ROS_INFO("[HIDE MARKER] at %s", enumtoString(targetZone).c_str());
-    //           manageMarker(marker, static_cast<int>(targetZone), operation, shape);
-    //         }
-    //         break;
-    //     }
-    //   }
+    // Check if the autonoumous navigation operation is desired
+    if (strParam.compare("autonomous_nav") == 0) {
+      autonomous_nav(tskData, &amclPoseListener);
+    }  
       
     marker_pub.publish(tskData.marker); // Publish the marker to the desired position (or hide it)
 
