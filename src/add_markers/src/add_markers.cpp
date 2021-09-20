@@ -9,6 +9,7 @@
 enum class TargetZone { PICKUP_ZONE, DROP_OFF_ZONE };
 enum class Operation { START, ADD_MARKER, DELETE_MARKER, MOVING, TASK_COMPLETED };
 
+// Properties of the marker
 const std::vector<double> marker_prop { 0.1f, 0.1f, 0.2f, 0.0f, 1.0f, 1.0f, 1.0f }; // Size: 0-2, Color: 3-6
 
 // The map contains the navigation data of each target point
@@ -17,9 +18,7 @@ const std::map<int, std::vector<double> > navData {
   { static_cast<int>(TargetZone::DROP_OFF_ZONE), std::vector<double> { -2.14f, -2.96f, 0.0f, 0.0f, 0.0f, -0.92f, 0.39f } }
 };
 
-static int zoneIdx = 0;
-
-// Constains all the necessary task data
+// Constains all the necessary data of the task
 struct TaskData {
   TargetZone targetZone;
   Operation operation;
@@ -34,10 +33,13 @@ struct TaskData {
   }
 };
 
+/* Calculates the manhattan distance by the following formula: 
+dist = |marker.x - robo.x| + |marker.y - robo.y| + |marker.z - robo.z| */
 inline double calcManhattanDist(const std::vector<double>& robo_pose, const std::vector<double>& marker_pose) {
   return std::abs(marker_pose[0] - robo_pose[0]) + std::abs(marker_pose[1] - robo_pose[1]) + std::abs(marker_pose[2] - robo_pose[2]);
 }
 
+// Converts an enum value to a stl string
 std::string enumtoString(const TargetZone& tarPos) {
     std::stringstream ss;
     switch(tarPos) {
@@ -94,9 +96,10 @@ class CmdVelocityListener
 // END LISTENERS_FOR_SUBSCRIBER
 
 void manageMarker(visualization_msgs::Marker& marker, TargetZone targetZone, Operation op, uint32_t shape) {
+    // Determine which action to perform
     if(op == Operation::ADD_MARKER) marker.action = visualization_msgs::Marker::ADD;
     else if (op == Operation::DELETE_MARKER) marker.action = visualization_msgs::Marker::DELETE;
-    else ROS_INFO("No valid target position specified!!!"); 
+    else ROS_INFO("Invalid target position specified!!!"); 
       
     // Set the position and orientation of the markers pickup zone (6 DOF)
     marker.pose.position.x = navData.at(static_cast<int>(targetZone))[0];
@@ -107,24 +110,24 @@ void manageMarker(visualization_msgs::Marker& marker, TargetZone targetZone, Ope
     marker.pose.orientation.z = navData.at(static_cast<int>(targetZone))[5];
     marker.pose.orientation.w = navData.at(static_cast<int>(targetZone))[6];
 
-    // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+    // Set the frame ID, timestamp. See the TF tutorials for detailed information
     marker.header.frame_id = "map";
     marker.header.stamp = ros::Time::now();
 
-    // Set the namespace and id for this marker.  This serves to create a unique ID
-    // Any marker sent with the same namespace and id will overwrite the old one
+    // Set the namespace and id for this marker. This serves to create a unique ID
+    // NOTE: Any marker send with the same namespace and id, will overwrite the old one
     marker.ns = "basic_shapes";
     marker.id = 0;
 
-    // Set the marker type to a CUBE
+    // Set the marker type
     marker.type = shape;
     
-    // Set the scale of the marker -- 1x1x1 here means 1m on a side
+    // Set the scale of the marker (x,y,z)
     marker.scale.x = marker_prop[0];
     marker.scale.y = marker_prop[1];
     marker.scale.z = marker_prop[2];
 
-    // Set the color -- be sure to set alpha to something non-zero!
+    // Set the color, be sure to set alpha channel != 0 (R,G,B,A)
     marker.color.r = marker_prop[3];
     marker.color.g = marker_prop[4];
     marker.color.b = marker_prop[5];
@@ -165,6 +168,7 @@ void add_markers_op(TaskData& tskData)
 }
 // END ADD_MARKERS_OP
 
+// Determines if the robot has stopped i.e. the angular velocity of all axis is zero
 bool robotStopped(double angx, double angy, double angz) {
   if(angx == 0.0f && angy == 0.0f && angz == 0.0f) return true;
   else return false;
@@ -195,9 +199,11 @@ void autonomous_nav(TaskData& tskData, const AmclPoseListener* pAmclPoseListener
           break;
       }
     }
+    // The robot moves towards the target zone
     else
       ROS_INFO("\n[ROBOT IS MOVING] Distance to target %s is %f", enumtoString(tskData.targetZone).c_str(), distance);  
   }
+  // If the robot is not moving
   else 
   {
     switch(static_cast<int>(tskData.targetZone)) 
@@ -233,12 +239,12 @@ void autonomous_nav(TaskData& tskData, const AmclPoseListener* pAmclPoseListener
 
 int main( int argc, char** argv )
 {
-  AmclPoseListener amclPoseListener;
-  CmdVelocityListener cmdVelListener;
-  ros::Subscriber sub_amcl_pose;
-  ros::Subscriber sub_cmd_vel;
+  AmclPoseListener amclPoseListener;  // Defines the listener for the amcl_pose topic
+  CmdVelocityListener cmdVelListener; // Defines the listener for the cmd_vel topic
+  ros::Subscriber sub_amcl_pose;      // Defines the subscriber for the amcl_pose topic
+  ros::Subscriber sub_cmd_vel;        // Defines the subscriber for the cmd_vel topic
 
-  ros::init(argc, argv, "add_markers");
+  ros::init(argc, argv, "add_markers"); // Creates this node named as add_markers
   ros::NodeHandle n_pub_mark;     // Node handle for the marker publisher
   ros::NodeHandle n_sub_cmd("~"); // Node handle for the amcl_pose command line argument NOTE: ~ is necessary
   ros::NodeHandle n_sub_amcl;     // Node handle for the amcl_pose subscriber
@@ -250,6 +256,7 @@ int main( int argc, char** argv )
   n_sub_cmd.getParam("operation", strParam);
   ROS_INFO("The parameter given is %s", strParam.c_str());
 
+  // Initialize the publisher for the marker
   ros::Publisher marker_pub = n_pub_mark.advertise<visualization_msgs::Marker>("visualization_marker", 1);
   visualization_msgs::Marker marker { };
 
@@ -267,11 +274,12 @@ int main( int argc, char** argv )
   } 
   else if(strParam.compare("autonomous_nav") == 0) {
     ROS_INFO("[AUTONOMOUS NAVIGATION OPERATION]");
+    // Initialize the publisher for the amcl_pose and cmd_vel topic
     sub_amcl_pose = n_sub_amcl.subscribe("amcl_pose", 1000, &AmclPoseListener::readPoseCallback, &amclPoseListener);
     sub_cmd_vel = n_sub_cmd_vel.subscribe("cmd_vel", 1000, &CmdVelocityListener::readVelocitiesCallback, &cmdVelListener);
   }
 
-  while (ros::ok())
+  while (ros::ok()) // loops as long as there is no driver error or the node does not shut down
   {
     // Publish the marker
     while (marker_pub.getNumSubscribers() < 1) {
@@ -308,5 +316,5 @@ int main( int argc, char** argv )
     r.sleep();
   }
 
-  getchar();
+  // getchar();
 }
