@@ -171,14 +171,14 @@ int main( int argc, char** argv )
         case static_cast<int>(TargetZone::PICKUP_ZONE):
           // Show the marker to the pickup zone
           if (strOperation.compare("ADD") == 0) {
-            ROS_INFO("[SHOW] Marker at %s shown", enumtoString(enumTargetZone).c_str());
+            ROS_INFO("[SHOW MARKER] Marker at %s shown", enumtoString(enumTargetZone).c_str());
             manageMarker(marker, static_cast<int>(TargetZone::PICKUP_ZONE), strOperation, shape);
             strOperation = "DELETE";
           }
           // Hide the marker at the pickup zone
           else if(strOperation.compare("DELETE") == 0) {
             ros::Duration(5).sleep();
-            ROS_INFO("[HIDE] Marker at %s hidden", enumtoString(enumTargetZone).c_str());
+            ROS_INFO("[HIDE MARKER] Marker at %s hidden", enumtoString(enumTargetZone).c_str());
             manageMarker(marker, static_cast<int>(TargetZone::PICKUP_ZONE), strOperation, shape);
             targetID = static_cast<int>(TargetZone::DROP_OFF_ZONE);
             enumTargetZone = TargetZone::DROP_OFF_ZONE;
@@ -188,19 +188,20 @@ int main( int argc, char** argv )
         case static_cast<int>(TargetZone::DROP_OFF_ZONE):
           // Show the marker to the drop off zone
           ros::Duration(5).sleep();
-          ROS_INFO("[SHOW] Marker at %s shown", enumtoString(enumTargetZone).c_str());
+          ROS_INFO("[SHOW MARKER] Marker at %s shown", enumtoString(enumTargetZone).c_str());
           manageMarker(marker, static_cast<int>(TargetZone::DROP_OFF_ZONE), strOperation, shape);
-          strOperation = "TASK_ENDED";
+          strOperation = "TASK_COMPLETED";
           break;
         default:
           ROS_INFO("[WARNING] No target position defined!!!"); 
       }
+
       marker_pub.publish(marker); // Publish the marker to the desired position (or hide it)
-      
-      // Checks if the marker is at the drop off zone to end the task
-      if(strOperation.compare("TASK_ENDED") == 0 && enumTargetZone == TargetZone::DROP_OFF_ZONE) {
-        ROS_INFO("[TASK COMPLETED] add_markers node shuts down now!!!");
+
+      // Checks if the taks has completed. If it is, the node shuts down
+      if(strOperation.compare("TASK_COMPLETED") == 0) {
         ros::Duration(5).sleep();
+        ROS_INFO("[TASK COMPLETED] add_markers node shuts down now!!!");
         ros::shutdown();
       }
     }
