@@ -42,17 +42,22 @@ To run the simulation, please follow the steps bellow. If you encounter any prob
 $ git clone https://github.com/michailtam/robotics-home-service-robot.git
 ```
 
-2. Build the project: After all packages and dependencies are installed properly, the project can be build by changing in the catkin toplevel workspace folder and issuing:
+2. Download the 2D navigation stack manually: Unlike, the other packages the navigation package has to be downloaded manually by changing in the ***src*** folder and issuing:
+```
+$ git clone https://github.com/ros-planning/navigation.git 
+```  
+
+3. Build the project: After all packages and dependencies are installed properly, the project can be build by changing in the catkin toplevel workspace folder and issuing:
 ```
 $ catkin_make
 ```
 
-3. Source the workspace
+4. Source the workspace
 ```
 $ source devel/setup.bash
 ```
 
-4. Run the simulation: With the following shell scripts on one side different test operations can be performed (test_, pick_, add_), and on the other side the main task home service can be executed, which simulates the pickup and delivery task:
+5. Run the simulation: With the following shell scripts on one side different test operations can be performed (test_, pick_, add_), and on the other side the main task home service can be executed, which simulates the pickup and delivery task:
 - [test_slam.sh] - Tests if SLAM is working
 - [test_navigation.sh] - Tests if the robot can be navigated manually
 - [pick_objects.sh] - Tests if the robot navigates autonomous to the pick up and drop off zone
