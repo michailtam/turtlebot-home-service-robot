@@ -6,7 +6,7 @@ raytrace_range: 1.0 #3.0
 transform_tolerance:  0.2
 
 robot_radius: 0.1
-inflation_radius: 0.35
+inflation_radius: 0.5 #0.35
 cost_scaling_factor: 15
 
 observation_sources: laser_scan_sensor

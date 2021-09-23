@@ -8,16 +8,7 @@ The simulation was developed and tested on the operating system Ubuntu 20.04 LTS
 - Localization
 - SLAM
 - Autonomous navigation
-- Visual observation by Rviz
-- Different tasks get executed (e.g. navigating to different zones)
-- Odometry data get evaluated...
-
-
-## Prerequisites
-The user does not need to know anything about the details of the project, if he only wants to see how the robot dperforms the tasks. This is because there are test shell scripts (.sh) available which get executed after issuing them (described in the installation section). For a detailed understanding of the code is implemented and how the algorithms work, a solid understanding of C++, Python and ROS is necessary.   
-
-The project was tested on Ubuntu 20.04 LTS using running gazebo and Rviz. and all the required packages are installed. The installation instructions can be found [here](http://wiki.ros.org/kinetic/Installation/Ubuntu) and [here](http://gazebosim.org/tutorials?tut=install_ubuntu).
-
+- Object pickup and delivery task
 
 ## Recommended Books
 - [ROS Robotics By Example](https://www.packtpub.com/product/ros-robotics-by-example/9781782175193)
@@ -25,74 +16,54 @@ The project was tested on Ubuntu 20.04 LTS using running gazebo and Rviz. and al
 - [Probabilistic Robotics](https://mitpress.mit.edu/books/probabilistic-robotics) - (higly recommended)
 - [Roboter mit ROS](https://dpunkt.de/produkt/roboter-mit-ros/) - (highly recommended)
 
+## ROS Packages Used
+The project requieres the following packages:
+
+### Localization
+As described above the Localization process gets shown in the Where Am I project. The packages used for localization are the [ROS map_server](http://wiki.ros.org/map_server) to create the map, which the robot will use to locate it's location. The localization method which gets applied is the particle filter method. The package which implements this algorithm is the [ROS AMCL](http://wiki.ros.org/amcl) package. The package implements an adaptive version (AMCL) of the [Monte Carlo algorithm - MCL](https://en.wikipedia.org/wiki/Monte_Carlo_algorithm), which adjusts the number of particles over a period of time, as the robot navigates in a map. This offers a significant computational advantage in contrast to MCL.
+
+### Mapping
+As described above the Mapping process gets shown in the Map My World project. The package used for Mapping is the [RTAB-Map](http://wiki.ros.org/rtabmap_ros). The package implements a RGB-D SLAM approach with real-time constraints. The parameters of the algorithm can be adjusted using [this](http://wiki.ros.org/rtabmap_ros/Tutorials/Advanced%20Parameter%20Tuning) tutorial. A nice tool to observe loop-closures is the [Database viewer](https://github.com/introlab/rtabmap/wiki/Tools), which gets described [here](http://wiki.ros.org/rtabmap_ros). 
+
+### Navigation
+The navigation of the robot gets applied by the [ROS Navigation Stack](http://wiki.ros.org/navigation). The package implements a 2D navigation stack that achieves information from odometry, sensor streams, and a goal pose and provides safe velocity commands that are sent to a mobile base. As you can see [here](https://github.com/ros-planning/navigation) the package implements a bunch of other packages like AMCL, Map Server etc. To navigate the robot by using the keyboard or a joystick the [Teleop](http://wiki.ros.org/turtlebot_teleop) package is needed.
+
+Most of the above packages will already be downloaded with the repository, but in the case of that some are missing or do not work properly, please refer to the following [list](https://www.ros.org/browse/list.php) and search for the package. Also, if you encounter any problems please refer to the [discussion forum of ROS](https://discourse.ros.org/) to get further help. You can also check the dependencies of the packages by issuing:
+```
+$ rosdep check <package name>
+$ rosdep install -i <package name>
+```
+
 ## Installation
-To install the project with it's necessary packages, please follow the steps bellow. If you encounter any problems please refer to the [discussion forum of ROS](https://discourse.ros.org/) to get further help.
-Catkin workspace
+To run the simulation, please follow the steps bellow. If you encounter any problems, please refer to the [discussion forum of ROS](https://discourse.ros.org/) to get further help.
 
-### ROS Packages
-RTAB-Map (Realtime-Appereance-Based-Mapping), AMCL, turtlebot_teleop, pgm_map_creator, gmapping
-
-Map creation
-```$ git clone https://github.com/udacity/pgm_map_creator.git```
-
-### ROS Navigation Stack
+1. Clone the repository
 ```
-$ sudo apt-get install ros-noetic-navigation
-$ sudo apt-get install ros-noetic-map-server
-$ sudo apt-get install ros-noetic-move-base
-$ sudo apt-get install ros-noetic-amcl
-
-or
-
-git clone -b noetic-devel https://github.com/ros-planning/navigation.git
+$ git clone https://github.com/michailtam/robotics-home-service-robot.git
 ```
 
-<rosparam file="$(find udacity_bot)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
-<rosparam file="$(find udacity_bot)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
-<rosparam file="$(find udacity_bot)/config/local_costmap_params.yaml" command="load" />
-<rosparam file="$(find udacity_bot)/config/global_costmap_params.yaml" command="load" />
-<rosparam file="$(find udacity_bot)/config/base_local_planner_params.yaml" command="load" />
-
-### ROS Teleop Package
-[Teleop Package](http://wiki.ros.org/turtlebot_teleop)
-$ git clone https://github.com/ros-teleop/teleop_twist_keyboard.git
-
-After building package
+2. Build the project
+After all packages and dependencies are installed properly, the project can be build by changing in the toplevel folder and issuing:
 ```
-$ rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+$ catkin_make
 ```
 
-### ROS Dependencies
-rosdep check <package name>
-rosdep install -i <package name>
-
-ROS packages online https://www.ros.org/browse/list.php
-
-cd /home/workspace/catkin_ws/ 
+3. Source the workspace
+```
 $ source devel/setup.bash
-$ rosdep check simple_arm
-
-### Clone the repository
-
-1. Clone the repository ```$ git clone https://github.com/michailtam/map-my-world.git```
-2. Change into the **src** folder ```$ cd src``` and initialize the workspace ```$ catkin_init_workspace```
-3. Return to the toplevel catkin folder and build the packages```$ catkin_make```
-4. You also need to install the following packages:
-```
-$ git clone -b noetic-devel https://github.com/ros-planning/navigation.git
 ```
 
-## Running the simulation:
-- test_slam.sh
-- test_navigation.sh
-- pick_objects.sh
-- add_marker.sh
-- home_service.sh
+4. Run the simulation
+With the following shell scripts on one side different test operations can be performed (test_, pick_, add_), and on the other side the main task home service can be executed: 
 
-There are different .sh test shell scripts available which execute different task. For example, if you want to see how the markers get shown and hidden in a certain time stemp... issue ./add_markers.sh
+- [test_slam.sh] - Tests if SLAM is working
+- [test_navigation.sh] - Tests if the robot can be navigated manually
+- [pick_objects.sh] - Tests if the robot navigates autonomous to the pick up and drop off zone
+- [add_marker.sh] - Tests if the markers are shown and hidden properly (marker shown at pick up zone -> marker hidden after 5 seconds at pickup zone -> marker shown after 5 seconds at the drop off zone)
+- [home_service.sh] - This executes the pickup and delivery task. More precisely, the robot executes the following operations autonomously: Navigates to the pickup zone -> picks up the marker -> navigates to the drop zone and delivers the marker.
 
 
-To run the simulation follow the following steps:
+
 
 Open a terminal, change into the toplevel of the catkin_workspace and issue: 
 ```./test_home_service_robot.sh```
@@ -108,6 +79,7 @@ $ roslaunch my_robot world.launch
 $ source devel/setup.bash
 $ roslaunch my_robot amcl.launch
 ```
+
 
 ## Rviz
 Rviz is pre-configured with default parameters to execute SLAM. Feel free to adjust these parameters to your needs.
@@ -125,12 +97,87 @@ While Gazebo is a physics simulator, RViz can visualize any type of sensor data 
 
 You can also visualize live joint angle values from a robot and hence construct a real-time 3D representation of any robot. Having said that, RViz is not a simulator and does not interface with a physics engine. So RViz models neither collisions nor dynamics. RViz is not an alternative to Gazebo, but rather a complementary tool to keep an eye on every single process under the hood of a robotic system.
 
-### OPTIONAL: Camera
-Topic /camera/rgb/image_raw
 
 ## rqt_graph
 ```$ rosrun rqt_graph rqt_graph```
 
+## Costmap Parameters
+To achieve the resulting simulation a bunch of parameters had to be adjusted accordingly. The parameters are included in the folder **config** in the following files:
+
+**costmap_common_params.yaml**
+```
+map_type: costmap
+
+obstacle_range: 1.0 #3.0
+raytrace_range: 1.0 #3.0
+
+transform_tolerance:  0.2
+
+robot_radius: 0.1
+inflation_radius: 0.5 #0.35
+cost_scaling_factor: 15
+
+observation_sources: laser_scan_sensor
+
+laser_scan_sensor: {sensor_frame: hokuyo, data_type: LaserScan, topic: /scan, marking: true, clearing: true}
+```
+
+**local_costmap_params.yaml**
+```
+local_costmap:
+    global_frame: odom
+    robot_base_frame: robot_footprint
+    update_frequency: 5.0
+    publish_frequency: 5.0
+    width: 2.5
+    height: 2.5
+    resolution: 0.05
+    static_map: false
+    rolling_window: true
+```
+
+**global_costmap_params.yaml**
+```
+global_costmap:
+    global_frame: map
+    robot_base_frame: robot_footprint
+    update_frequency: 5.0
+    publish_frequency: 5.0
+    width: 20.0
+    height: 20.0
+    resolution: 0.05
+    static_map: true
+    rolling_window: false
+```
+
+**base_local_planner_params.yaml**
+```
+controller_frequency: 10.0
+
+TrajectoryPlannerROS:
+    max_vel_x: 0.5 
+    min_vel_x: 0.01
+    max_vel_theta: 1.57 #1.00
+
+    min_in_place_vel_theta: 0.1 #0.314
+
+    acc_lim_theta: 3.14
+    acc_lim_x: 2.0
+    acc_lim_y: 2.0
+
+    sim_time: 1.0
+
+    vx_samples: 5.0
+    vtheta_samples: 10.0
+
+    pdist_scale: 0.6
+    gdist_scale: 0.8
+    occdist_scale: 0.02
+
+    holonomic_robot: true
+
+    meter_scoring: true #false
+```
 
 ## Screenshots
 Show screenshot of rqt_graph
