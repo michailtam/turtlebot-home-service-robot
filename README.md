@@ -17,15 +17,15 @@ The simulation was developed and tested on the operating system Ubuntu 20.04 LTS
 - [Roboter mit ROS](https://dpunkt.de/produkt/roboter-mit-ros/) - (highly recommended)
 
 ## ROS Packages Used
-The project requieres the following packages:
+The project requieres the following packages, to be able to perform Localization, Mapping and Navigation:
 
-### Localization
+### ROS Localization
 As described above the Localization process gets shown in the Where Am I project. The packages used for localization are the [ROS map_server](http://wiki.ros.org/map_server) to create the map, which the robot will use to locate it's location. The localization method which gets applied is the particle filter method. The package which implements this algorithm is the [ROS AMCL](http://wiki.ros.org/amcl) package. The package implements an adaptive version (AMCL) of the [Monte Carlo algorithm - MCL](https://en.wikipedia.org/wiki/Monte_Carlo_algorithm), which adjusts the number of particles over a period of time, as the robot navigates in a map. This offers a significant computational advantage in contrast to MCL.
 
-### Mapping
+### ROS Mapping
 As described above the Mapping process gets shown in the Map My World project. The package used for Mapping is the [RTAB-Map](http://wiki.ros.org/rtabmap_ros). The package implements a RGB-D SLAM approach with real-time constraints. The parameters of the algorithm can be adjusted using [this](http://wiki.ros.org/rtabmap_ros/Tutorials/Advanced%20Parameter%20Tuning) tutorial. A nice tool to observe loop-closures is the [Database viewer](https://github.com/introlab/rtabmap/wiki/Tools), which gets described [here](http://wiki.ros.org/rtabmap_ros). 
 
-### Navigation
+### ROS Navigation
 The navigation of the robot gets applied by the [ROS Navigation Stack](http://wiki.ros.org/navigation). The package implements a 2D navigation stack that achieves information from odometry, sensor streams, and a goal pose and provides safe velocity commands that are sent to a mobile base. As you can see [here](https://github.com/ros-planning/navigation) the package implements a bunch of other packages like AMCL, Map Server etc. To navigate the robot by using the keyboard or a joystick the [Teleop](http://wiki.ros.org/turtlebot_teleop) package is needed.
 
 Most of the above packages will already be downloaded with the repository, but in the case of that some are missing or do not work properly, please refer to the following [list](https://www.ros.org/browse/list.php) and search for the package. Also, if you encounter any problems please refer to the [discussion forum of ROS](https://discourse.ros.org/) to get further help. You can also check the dependencies of the packages by issuing:
@@ -42,8 +42,7 @@ To run the simulation, please follow the steps bellow. If you encounter any prob
 $ git clone https://github.com/michailtam/robotics-home-service-robot.git
 ```
 
-2. Build the project
-After all packages and dependencies are installed properly, the project can be build by changing in the toplevel folder and issuing:
+2. Build the project: After all packages and dependencies are installed properly, the project can be build by changing in the catkin toplevel workspace folder and issuing:
 ```
 $ catkin_make
 ```
@@ -53,53 +52,40 @@ $ catkin_make
 $ source devel/setup.bash
 ```
 
-4. Run the simulation
-With the following shell scripts on one side different test operations can be performed (test_, pick_, add_), and on the other side the main task home service can be executed: 
-
+4. Run the simulation: With the following shell scripts on one side different test operations can be performed (test_, pick_, add_), and on the other side the main task home service can be executed, which simulates the pickup and delivery task:
 - [test_slam.sh] - Tests if SLAM is working
 - [test_navigation.sh] - Tests if the robot can be navigated manually
 - [pick_objects.sh] - Tests if the robot navigates autonomous to the pick up and drop off zone
 - [add_marker.sh] - Tests if the markers are shown and hidden properly (marker shown at pick up zone -> marker hidden after 5 seconds at pickup zone -> marker shown after 5 seconds at the drop off zone)
 - [home_service.sh] - This executes the pickup and delivery task. More precisely, the robot executes the following operations autonomously: Navigates to the pickup zone -> picks up the marker -> navigates to the drop zone and delivers the marker.
 
-
-
-
-Open a terminal, change into the toplevel of the catkin_workspace and issue: 
-```./test_home_service_robot.sh```
-
-Alternatively you can execute each test script seperately with the following steps:
-1. Open a terminal change into the toplevel of the catkin workspace and issue
+To execute one of the above shell scripts change in the toplevel of the catkin ws and issue:
 ```
 $ source devel/setup.bash
-$ roslaunch my_robot world.launch
-```
-2. Open a second terminal (also change to toplevel) and issue
-```
-$ source devel/setup.bash
-$ roslaunch my_robot amcl.launch
+$ ./<name_of_shell_script>.sh
 ```
 
+Alternatively, you can execute each script seperately by following the below steps. The disadvantage of this method is that you need to open for each launch file a seperate terminal:
+```
+$ source devel/setup.bash
+$ roslaunch <package>/launch/<launch_file>.launch
+```
 
 ## Rviz
-Rviz is pre-configured with default parameters to execute SLAM. Feel free to adjust these parameters to your needs.
-
-RViz stands for ROS Visualization. RViz is our one-stop tool to visualize all three core aspects of a robot: perception, decision-making, and actuation.
+If you need to save your own rviz configurations, you can open them by issuing:
 ```
 $ source devel/setup.bash
-$ rosrun rviz rviz
+$ $ rosrun rviz rviz -d /catkin_ws/src/<folder_of_the_rviz_conf>/<file_name>.rviz
 ```
 
-Launch specific configuration file in rviz 
-```$ rosrun rviz rviz -d /catkin_ws/src/<file_name.rviz>``` ???
-
-While Gazebo is a physics simulator, RViz can visualize any type of sensor data being published over a ROS topic: camera images, point clouds, ultrasonic measurements, lidar data, inertial measurements, and more. This data can be a live stream directly from the sensor or pre-recorded data stored as a bagfile.
-
-You can also visualize live joint angle values from a robot and hence construct a real-time 3D representation of any robot. Having said that, RViz is not a simulator and does not interface with a physics engine. So RViz models neither collisions nor dynamics. RViz is not an alternative to Gazebo, but rather a complementary tool to keep an eye on every single process under the hood of a robotic system.
-
-
-## rqt_graph
+## ROS rqt_graph Output
+The topics which are used to perform navigation, image fetching, AMCL, marker visualization and map usage are shon in (blue). ROS nodes which were created in C++ by the developer to execute adding and and pick up operations are shown in (green).  
 ```$ rosrun rqt_graph rqt_graph```
+
+| **Output of rqt_graph** |
+| :--- |
+| **Screenshot** |
+| <img src="https://github.com/michailtam/map-my-world/blob/master/images/rgt_graph_makred.png" alt="Output of rqt_graph" width="660" height="400" border="0" /> |
 
 ## Costmap Parameters
 To achieve the resulting simulation a bunch of parameters had to be adjusted accordingly. The parameters are included in the folder **config** in the following files:
@@ -179,18 +165,24 @@ TrajectoryPlannerROS:
     meter_scoring: true #false
 ```
 
-## Screenshots
-Show screenshot of rqt_graph
-
-| **1st RTAB-DB Output** |
+## Videos
+| **Home Service Robot Operation** |
 | :--- |
-| Left: The created 2D map and the path the robot is traversing, Center: The output of the camera, Right: The constraints view | 
-| **Screenshot** |
-| <img src="https://github.com/michailtam/map-my-world/blob/master/images/rtabmap-dbviewer-start_0.png" alt="Map after SLAM" width="660" height="400" border="0" /> |
+| The video shows how the mobile robot performs autonomously the pickup and drop off task shown in birds eye view. | 
+| **Video** |
+| <a href="https://www.youtube.com/watch?v=Lg-u6IF4vuU&t=8s" target="_blank">
+<img src="https://github.com/michailtam/map-my-world/blob/master/images/video_preview.png" alt="Home Service Operations" width="560" height="400" border="0" /> |
 
-## Videos - formating
-<a href="https://youtu.be/6FNHveEkFfM" target="_blank">
-<img src="https://github.com/michailtam/map-my-world/blob/master/images/video_preview.png" alt="Map My World (ROS) Video" width="560" height="400" border="0" />
+| **Rviz Output** |
+| :--- |
+| The video shows how the robot navigates in the building autonomously while it senses the environment. You can see that obstacles are inflated (blue shape regions). | 
+| **Video** |
+| <a href="https://www.youtube.com/watch?v=p2wJKt1Fqu8" target="_blank">
+<img src="https://github.com/michailtam/map-my-world/blob/master/images/video_preview.png" alt="Rviz output" width="560" height="400" border="0" /> |
 
-<a href="https://youtu.be/6FNHveEkFfM" target="_blank">
-<img src="https://github.com/michailtam/map-my-world/blob/master/images/video_preview.png" alt="Map My World (ROS) Video" width="560" height="400" border="0" />
+| **2D SLAM** |
+| :--- |
+| The video shows how the robot navigates on the map and performs SLAM to create the 2d map. | 
+| **Video** |
+| <a href="https://www.youtube.com/watch?v=pGH0uAwmVvM&t=61s" target="_blank">
+<img src="https://github.com/michailtam/map-my-world/blob/master/images/video_preview.png" alt="Rviz output" width="560" height="400" border="0" /> |
