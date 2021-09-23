@@ -85,7 +85,7 @@ The topics which are used to perform navigation, image fetching, AMCL, marker vi
 | **Output of rqt_graph** |
 | :--- |
 | **Screenshot** |
-| <img src="https://github.com/michailtam/map-my-world/blob/master/images/rgt_graph_makred.png" alt="Output of rqt_graph" width="660" height="400" border="0" /> |
+| <img src="https://github.com/michailtam/robotics-home-service-robot/blob/master/images/rgt_graph_makred.png" alt="Output of rqt_graph" width="660" height="400" border="0" /></a> |
 
 ## Costmap Parameters
 To achieve the resulting simulation a bunch of parameters had to be adjusted accordingly. The parameters are included in the folder **config** in the following files:
@@ -171,18 +171,18 @@ TrajectoryPlannerROS:
 | The video shows how the mobile robot performs autonomously the pickup and drop off task shown in birds eye view. | 
 | **Video** |
 | <a href="https://www.youtube.com/watch?v=Lg-u6IF4vuU&t=8s" target="_blank">
-<img src="https://github.com/michailtam/map-my-world/blob/master/images/video_preview.png" alt="Home Service Operations" width="560" height="400" border="0" /> |
+<img src="https://github.com/michailtam/robotics-home-service-robot/blob/master/images/home_service_op.png" alt="Home Service Operations" width="560" height="400" border="0" /></a>|
 
 | **Rviz Output** |
 | :--- |
 | The video shows how the robot navigates in the building autonomously while it senses the environment. You can see that obstacles are inflated (blue shape regions). | 
 | **Video** |
 | <a href="https://www.youtube.com/watch?v=p2wJKt1Fqu8" target="_blank">
-<img src="https://github.com/michailtam/map-my-world/blob/master/images/video_preview.png" alt="Rviz output" width="560" height="400" border="0" /> |
+<img src="https://github.com/michailtam/robotics-home-service-robot/blob/master/images/rviz_output.png" alt="Rviz output" width="560" height="400" border="0" /></a>|
 
 | **2D SLAM** |
 | :--- |
 | The video shows how the robot navigates on the map and performs SLAM to create the 2d map. | 
 | **Video** |
 | <a href="https://www.youtube.com/watch?v=pGH0uAwmVvM&t=61s" target="_blank">
-<img src="https://github.com/michailtam/map-my-world/blob/master/images/video_preview.png" alt="Rviz output" width="560" height="400" border="0" /> |
+<img src="https://github.com/michailtam/robotics-home-service-robot/blob/master/images/2d_slam.png" alt="Rviz output" width="560" height="400" border="0" /></a>|
