@@ -37,24 +37,22 @@ $ rosdep install -i <package name>
 ## Installation
 To run the simulation, please follow the steps bellow. If you encounter any problems, please refer to the [discussion forum of ROS](https://discourse.ros.org/) to get further help.
 
+Turtlebot3
+
+1. $ sudo apt-get update
+
+2. $ sudo apt-get upgrade
+
+3. gedit ~/.bashrc
+
+source /opt/ros/noetic/setup.bash
+export TURTLEBOT3_MODEL=burger
+
+4. 
+
 1. Clone the repository
 ```
 $ git clone https://github.com/michailtam/robotics-home-service-robot.git
-```
-
-2. Download the 2D navigation stack manually: Unlike, the other packages the navigation package has to be downloaded manually by changing in the ***src*** folder and issuing:
-```
-$ git clone https://github.com/ros-planning/navigation.git 
-```  
-
-3. Build the project: After all packages and dependencies are installed properly, the project can be build by changing in the catkin toplevel workspace folder and issuing:
-```
-$ catkin_make
-```
-
-4. Source the workspace
-```
-$ source devel/setup.bash
 ```
 
 5. Run the simulation: With the following shell scripts on one side different test operations can be performed (test_, pick_, add_), and on the other side the main task home service can be executed, which simulates the pickup and delivery task:
